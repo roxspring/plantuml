@@ -35,69 +35,71 @@
  */
 package net.sourceforge.plantuml.skin;
 
-import java.awt.geom.Dimension2D;
-
 import net.sourceforge.plantuml.Dimension2DDouble;
 import net.sourceforge.plantuml.graphic.AbstractTextBlock;
 import net.sourceforge.plantuml.graphic.HtmlColor;
 import net.sourceforge.plantuml.graphic.StringBounder;
 import net.sourceforge.plantuml.graphic.SymbolContext;
 import net.sourceforge.plantuml.graphic.TextBlock;
-import net.sourceforge.plantuml.ugraphic.UChangeBackColor;
 import net.sourceforge.plantuml.ugraphic.UEllipse;
 import net.sourceforge.plantuml.ugraphic.UGraphic;
 import net.sourceforge.plantuml.ugraphic.UPath;
 import net.sourceforge.plantuml.ugraphic.UStroke;
 import net.sourceforge.plantuml.ugraphic.UTranslate;
 
+import java.awt.geom.Dimension2D;
+
 public class StickMan extends AbstractTextBlock implements TextBlock {
 
-	private final double armsY = 8;
-	private final double armsLenght = 13;
-	private final double bodyLenght = 27;
-	private final double legsX = 13;
-	private final double legsY = 15;
-	private final double headDiam = 16;
+	private final double headDiam = 32;
+	private final double bodyWidth = 54;
+	private final double shoulder = 16;
+	private final double collar = 4;
+	private final double radius = 8;
+	private final double bodyHeight = 28;
 
 	private final SymbolContext symbolContext;
 
 	public StickMan(SymbolContext symbolContext) {
-		this.symbolContext = symbolContext;
+		this.symbolContext = symbolContext.withStroke(new UStroke(1.5));
 	}
 
 	private StickMan(HtmlColor backgroundColor, HtmlColor foregroundColor, double deltaShadow) {
-		this(new SymbolContext(backgroundColor, foregroundColor).withDeltaShadow(deltaShadow)
-				.withStroke(new UStroke(2)));
+		this(new SymbolContext(backgroundColor, foregroundColor).withDeltaShadow(deltaShadow));
 	}
 
 	public StickMan(HtmlColor backgroundColor, HtmlColor foregroundColor) {
-		this(new SymbolContext(backgroundColor, foregroundColor).withStroke(new UStroke(2)));
+		this(new SymbolContext(backgroundColor, foregroundColor));
 	}
 
 	public void drawU(UGraphic ug) {
 
-		final double startX = Math.max(armsLenght, legsX) - headDiam / 2.0 + thickness();
+		System.out.println(symbolContext.getStroke());
 
 		final UEllipse head = new UEllipse(headDiam, headDiam);
-		final double centerX = startX + headDiam / 2;
+		final double centerX = getPreferredWidth()/2;
 
 		final UPath path = new UPath();
-		path.moveTo(0, 0);
-		path.lineTo(0, bodyLenght);
-		path.moveTo(-armsLenght, armsY);
-		path.lineTo(armsLenght, armsY);
-		path.moveTo(0, bodyLenght);
-		path.lineTo(-legsX, bodyLenght + legsY);
-		path.moveTo(0, bodyLenght);
-		path.lineTo(legsX, bodyLenght + legsY);
+		path.moveTo(0, collar);
+		path.cubicTo(collar, collar, bodyWidth/2-shoulder-collar, collar, bodyWidth/2-shoulder, 0);
+		path.cubicTo(bodyWidth/2-shoulder/2, 0, bodyWidth/2, shoulder/2, bodyWidth/2, shoulder);
+		path.lineTo(bodyWidth/2, bodyHeight-radius);
+		path.cubicTo(bodyWidth/2, bodyHeight-radius/2, bodyWidth/2-radius/2, bodyHeight, bodyWidth/2-radius, bodyHeight);
+		path.lineTo(-bodyWidth/2+radius, bodyHeight);
+		path.cubicTo(-bodyWidth/2+radius/2, bodyHeight, -bodyWidth/2, bodyHeight-radius/2, -bodyWidth/2, bodyHeight-radius);
+		path.lineTo(-bodyWidth/2, shoulder);
+		path.cubicTo(-bodyWidth/2, shoulder/2, -bodyWidth/2+shoulder/2, 0, -bodyWidth/2+shoulder, 0);
+		path.cubicTo(-bodyWidth/2+shoulder+collar, collar, -collar, collar, 0, collar);
+		path.closePath();
+
 		if (symbolContext.getDeltaShadow() != 0) {
 			head.setDeltaShadow(symbolContext.getDeltaShadow());
 			path.setDeltaShadow(symbolContext.getDeltaShadow());
 		}
-
 		ug = symbolContext.apply(ug);
-		ug.apply(new UTranslate(startX, thickness())).draw(head);
-		ug.apply(new UTranslate(centerX, headDiam + thickness())).apply(new UChangeBackColor(null)).draw(path);
+		ug.apply(new UTranslate(centerX-head.getWidth()/2, thickness())).draw(head);
+		ug.apply(new UTranslate(centerX, head.getHeight() + thickness())).draw(path);
+
 	}
 
 	private double thickness() {
@@ -105,11 +107,11 @@ public class StickMan extends AbstractTextBlock implements TextBlock {
 	}
 
 	public double getPreferredWidth() {
-		return Math.max(armsLenght, legsX) * 2 + 2 * thickness();
+		return bodyWidth + thickness() * 2;
 	}
 
 	public double getPreferredHeight() {
-		return headDiam + bodyLenght + legsY + 2 * thickness() + symbolContext.getDeltaShadow() + 1;
+		return headDiam + bodyHeight + thickness() * 2;
 	}
 
 	public Dimension2D calculateDimension(StringBounder stringBounder) {
